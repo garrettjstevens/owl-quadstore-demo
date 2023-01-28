@@ -1,0 +1,14 @@
+{
+  "name": "obo-rdf-etc",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Garrett Stevens <stevens.garrett.j@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "memory-level": "^1.0.0",
+    "quadstore": "^11.0.8",
+    "quadstore-comunica": "^3.0.9",
+    "rdf-data-factory": "^1.1.1",
+    "rdfxml-streaming-parser": "^2.2.1"
+  }
+}
