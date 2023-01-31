@@ -8,13 +8,13 @@
     "start": "yarn tsc && yarn node dist/index.js"
   },
   "dependencies": {
-    "memory-level": "^1.0.0",
-    "quadstore": "^11.0.8",
-    "quadstore-comunica": "^3.0.9",
-    "rdf-data-factory": "^1.1.1",
+    "@comunica/actor-rdf-serialize-shaclc": "^2.6.0",
+    "@comunica/query-sparql-rdfjs": "^2.6.0",
+    "n3": "^1.16.3",
     "rdfxml-streaming-parser": "^2.2.1"
   },
   "devDependencies": {
+    "@types/n3": "^1.10.4",
     "typescript": "^4.9.5"
   }
 }

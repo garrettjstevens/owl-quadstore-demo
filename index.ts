@@ -1,17 +1,12 @@
 import fs from 'fs'
 import { RdfXmlParser } from 'rdfxml-streaming-parser'
-import { MemoryLevel } from 'memory-level'
-import { DataFactory } from 'rdf-data-factory'
-import { Quadstore } from 'quadstore'
-import { Engine } from 'quadstore-comunica'
+import { Store } from 'n3'
+import { QueryEngine } from '@comunica/query-sparql-rdfjs'
 
 const myParser = new RdfXmlParser()
-const backend = new MemoryLevel()
-const df = new DataFactory()
 
-async function getStore(): Promise<Quadstore> {
-  const store = new Quadstore({ backend, dataFactory: df })
-  await store.open()
+async function getStore(): Promise<Store> {
+  const store = new Store()
   return new Promise((resolve, reject) => {
     store
       .import(fs.createReadStream('./so-simple.owl').pipe(myParser))
@@ -22,17 +17,13 @@ async function getStore(): Promise<Quadstore> {
 
 async function main() {
   const store = await getStore()
-  // const { items } = await store.get({}, { limit: 2 })
-  // console.log(JSON.stringify(items, null, 2))
-
-  // or, using SPARQL
-  const engine = new Engine(store)
+  const engine = new QueryEngine()
 
   // QUESTION: What are the valid child types of a 'gene' (SO:0000704)
   // List should contain gene_member_region (SO:0000831) and mRNA (SO:0000234)
   // Good resource: https://ontobee.org/tutorial/sparql
   // This query gets "member_of"s, and then traverses all "is_a"s of the child.
-  // Takes a while, ~30s for 384 results for "gene"
+  // Takes ~3s for 384 results for "gene", ~2s of that is loading the data
   const bindingsStream = await engine.queryBindings(
     `
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
@@ -50,8 +41,11 @@ async function main() {
       ?equivalent rdfs:subClassOf+ ?child .
     }
 `,
+    { sources: [store] },
   )
   console.log('child\tlabel\tequivalent\tequivalent_label')
+  // Can also convert to array with
+  // const bindings = await bindingsStream.toArray()
   bindingsStream.on('data', (binding) => {
     const child = binding.get('child')?.value
     const label = binding.get('label')?.value
