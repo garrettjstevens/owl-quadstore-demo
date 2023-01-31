@@ -30,9 +30,9 @@ async function main() {
 
   // QUESTION: What are the valid child types of a 'gene' (SO:0000704)
   // List should contain gene_member_region (SO:0000831) and mRNA (SO:0000234)
-  // So far we are getting gene_member_region, still need to traverse is_a to
-  // get to mRNA
   // Good resource: https://ontobee.org/tutorial/sparql
+  // This query gets "member_of"s, and then traverses all "is_a"s of the child.
+  // Takes a while, ~30s for 384 results for "gene"
   const bindingsStream = await engine.queryBindings(
     `
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
@@ -46,14 +46,18 @@ async function main() {
       ?restriction rdf:type owl:Restriction .
       ?restriction owl:onProperty so:member_of .
       ?restriction owl:someValuesFrom obo:SO_0000704 .
+      ?equivalent rdfs:label ?equivalent_label .
+      ?equivalent rdfs:subClassOf+ ?child .
     }
 `,
   )
-  console.log('child\tlabel')
+  console.log('child\tlabel\tequivalent\tequivalent_label')
   bindingsStream.on('data', (binding) => {
     const child = binding.get('child')?.value
     const label = binding.get('label')?.value
-    console.log(`${child}\t${label}`)
+    const equivalent = binding.get('equivalent')?.value
+    const equivalent_label = binding.get('equivalent_label')?.value
+    console.log(`${child}\t${label}\t${equivalent}\t${equivalent_label}`)
   })
 }
 
