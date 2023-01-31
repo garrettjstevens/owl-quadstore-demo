@@ -22,18 +22,30 @@ async function getStore() {
 
 async function main() {
   const store = await getStore()
-  const { items } = await store.get({}, { limit: 2 })
-  console.log(JSON.stringify(items, null, 2))
+  // const { items } = await store.get({}, { limit: 2 })
+  // console.log(JSON.stringify(items, null, 2))
 
   // or, using SPARQL
   const engine = new Engine(store)
+
+  // QUESTION: What are the valid child types of a 'gene' (SO:0000704)
   const bindingsStream = await engine.queryBindings(
-  `
-  SELECT * {?s ?p ?o} LIMIT 2
-  `)
-  bindingsStream.on('data', binding => {
-    console.log(JSON.stringify(binding, null, 2))
-  });
+    `
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX so: <http://purl.obolibrary.org/obo/so#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX obo: <http://purl.obolibrary.org/obo/>
+    SELECT *
+    WHERE { ?s rdfs:subClassOf obo:SO_0000704 }
+    
+`,
+  )
+  bindingsStream.on('data', (binding) => {
+    const o = binding.get('o')?.value
+    const p = binding.get('p')?.value
+    const s = binding.get('s')?.value
+    console.log(`${s}\t${p}\t${o}`)
+  })
 }
 
 main()
