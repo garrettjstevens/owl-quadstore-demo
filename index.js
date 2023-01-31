@@ -29,6 +29,10 @@ async function main() {
   const engine = new Engine(store)
 
   // QUESTION: What are the valid child types of a 'gene' (SO:0000704)
+  // List should contain gene_member_region (SO:0000831) and mRNA (SO:0000234)
+  // So far we are getting gene_member_region, still need to traverse is_a to
+  // get to mRNA
+  // Good resource: https://ontobee.org/tutorial/sparql
   const bindingsStream = await engine.queryBindings(
     `
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
@@ -36,15 +40,20 @@ async function main() {
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX obo: <http://purl.obolibrary.org/obo/>
     SELECT *
-    WHERE { ?s rdfs:subClassOf obo:SO_0000704 }
-    
+    WHERE {
+      ?child rdfs:label ?label .
+      ?child rdfs:subClassOf ?restriction .
+      ?restriction rdf:type owl:Restriction .
+      ?restriction owl:onProperty so:member_of .
+      ?restriction owl:someValuesFrom obo:SO_0000704 .
+    }
 `,
   )
+  console.log('child\tlabel')
   bindingsStream.on('data', (binding) => {
-    const o = binding.get('o')?.value
-    const p = binding.get('p')?.value
-    const s = binding.get('s')?.value
-    console.log(`${s}\t${p}\t${o}`)
+    const child = binding.get('child')?.value
+    const label = binding.get('label')?.value
+    console.log(`${child}\t${label}`)
   })
 }
 
