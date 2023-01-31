@@ -1,15 +1,15 @@
-const fs = require('fs')
-const { RdfXmlParser } = require('rdfxml-streaming-parser')
-const { MemoryLevel } = require('memory-level')
-const { DataFactory } = require('rdf-data-factory')
-const { Quadstore } = require('quadstore')
-const { Engine } = require('quadstore-comunica')
+import fs from 'fs'
+import { RdfXmlParser } from 'rdfxml-streaming-parser'
+import { MemoryLevel } from 'memory-level'
+import { DataFactory } from 'rdf-data-factory'
+import { Quadstore } from 'quadstore'
+import { Engine } from 'quadstore-comunica'
 
 const myParser = new RdfXmlParser()
 const backend = new MemoryLevel()
 const df = new DataFactory()
 
-async function getStore() {
+async function getStore(): Promise<Quadstore> {
   const store = new Quadstore({ backend, dataFactory: df })
   await store.open()
   return new Promise((resolve, reject) => {
