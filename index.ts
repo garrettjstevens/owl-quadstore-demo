@@ -11,7 +11,7 @@ async function getStore(): Promise<Store> {
     store
       .import(fs.createReadStream('./so-simple.owl').pipe(myParser))
       .on('error', reject)
-      .on('end', async () => resolve(store))
+      .on('end', () => resolve(store))
   })
 }
 
@@ -23,35 +23,33 @@ async function main() {
   // List should contain gene_member_region (SO:0000831) and mRNA (SO:0000234)
   // Good resource: https://ontobee.org/tutorial/sparql
   // This query gets "member_of"s, and then traverses all "is_a"s of the child.
-  // Takes ~3s for 384 results for "gene", ~2s of that is loading the data
+  // Takes ~15s for 415 results for "gene", ~2s of that is loading the data
   const bindingsStream = await engine.queryBindings(
     `
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
     PREFIX so: <http://purl.obolibrary.org/obo/so#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX obo: <http://purl.obolibrary.org/obo/>
-    SELECT *
+    SELECT DISTINCT ?childOrSubClass ?label
     WHERE {
-      ?child rdfs:label ?label .
-      ?child rdfs:subClassOf ?restriction .
-      ?restriction rdf:type owl:Restriction .
-      ?restriction owl:onProperty so:member_of .
-      ?restriction owl:someValuesFrom obo:SO_0000704 .
-      ?equivalent rdfs:label ?equivalent_label .
-      ?equivalent rdfs:subClassOf+ ?child .
+      ?parentOrSubClass (rdfs:subClassOf*) obo:SO_0000704.
+      ?partOfOrSubProperty (rdfs:subPropertyOf*) so:part_of.
+      ?childOrSubClass (rdfs:subClassOf*) ?restriction;
+        rdfs:label ?label.
+      ?restriction a owl:Restriction;
+        owl:onProperty ?partOfOrSubProperty;
+        owl:someValuesFrom ?parentOrSubClass.
     }
 `,
     { sources: [store] },
   )
-  console.log('child\tlabel\tequivalent\tequivalent_label')
+  console.log('child\tlabel')
   // Can also convert to array with
   // const bindings = await bindingsStream.toArray()
   bindingsStream.on('data', (binding) => {
-    const child = binding.get('child')?.value
+    const child = binding.get('childOrSubClass')?.value
     const label = binding.get('label')?.value
-    const equivalent = binding.get('equivalent')?.value
-    const equivalent_label = binding.get('equivalent_label')?.value
-    console.log(`${child}\t${label}\t${equivalent}\t${equivalent_label}`)
+    console.log(`${child}\t${label}`)
   })
 }
 
